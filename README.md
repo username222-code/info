@@ -1,2 +1,0 @@
-# info
-Bible ref tool
