@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bible-lookup-tool</title>
+  <meta name="description" content="Free KJV Bible lookup tool with verse number search, reference lookup, and chapter:verse cross-reference." />
+  <link rel="preconnect" href="https://api.fontshare.com" />
+  <link href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&f[]=zodiak@500,700&display=swap" rel="stylesheet" />
+  <style>
+    :root, [data-theme="light"] {
+      --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+      --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+      --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+      --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+      --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem; --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem; --space-12: 3rem; --space-16: 4rem;
+      --color-bg: #f7f6f2; --color-surface: #f9f8f5; --color-surface-2: #fbfbf9; --color-surface-offset: #f3f0ec; --color-border: #d4d1ca; --color-divider: #dcd9d5;
+      --color-text: #28251d; --color-text-muted: #67655f; --color-text-faint: #96938c; --color-text-inverse: #f9f8f4;
+      --color-primary: #01696f; --color-primary-hover: #0c4e54; --color-primary-highlight: #cedcd8;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.06); --shadow-md: 0 10px 28px rgba(31,29,25,.08);
+      --radius-sm: .375rem; --radius-md: .6rem; --radius-lg: 1rem; --radius-full: 9999px;
+      --content-default: 1100px;
+      --font-body: 'General Sans', system-ui, sans-serif;
+      --font-display: 'Zodiak', Georgia, serif;
+    }
+    [data-theme="dark"] {
+      --color-bg: #171614; --color-surface: #1c1b19; --color-surface-2: #201f1d; --color-surface-offset: #22211f; --color-border: #393836; --color-divider: #262523;
+      --color-text: #e1dfdc; --color-text-muted: #aaa7a1; --color-text-faint: #77746f; --color-text-inverse: #171614;
+      --color-primary: #4f98a3; --color-primary-hover: #227f8b; --color-primary-highlight: #313b3b;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.2); --shadow-md: 0 10px 28px rgba(0,0,0,.32);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-text-size-adjust:none; text-size-adjust:none; scroll-behavior:smooth; }
+    body { min-height:100dvh; line-height:1.6; font-family:var(--font-body); font-size:var(--text-base); color:var(--color-text); background:var(--color-bg); }
+    img, svg { display:block; max-width:100%; }
+    button, input, select { font:inherit; color:inherit; }
+    button { cursor:pointer; border:none; }
+    a { color:inherit; }
+    :focus-visible { outline:2px solid var(--color-primary); outline-offset:3px; border-radius:var(--radius-sm); }
+    .skip-link { position:absolute; left:-9999px; top:auto; }
+    .skip-link:focus { left:var(--space-4); top:var(--space-4); background:var(--color-surface); padding:var(--space-3) var(--space-4); z-index:1000; }
+    .container { width:min(100% - 2rem, var(--content-default)); margin-inline:auto; }
+    .site-header { position:sticky; top:0; z-index:20; backdrop-filter: blur(10px); background:color-mix(in srgb, var(--color-bg) 86%, transparent); border-bottom:1px solid var(--color-divider); }
+    .header-row { display:flex; align-items:center; justify-content:space-between; gap:var(--space-4); padding:var(--space-4) 0; }
+    .brand { display:flex; align-items:center; gap:var(--space-3); text-decoration:none; }
+    .brand-mark { width:40px; height:40px; color:var(--color-primary); }
+    .brand-name { font-weight:700; letter-spacing:.01em; }
+    .theme-toggle { min-width:44px; min-height:44px; border-radius:var(--radius-full); background:var(--color-surface); border:1px solid var(--color-border); }
+    .hero { padding:clamp(3rem, 8vw, 6rem) 0 var(--space-10); }
+    .hero-grid { display:grid; gap:var(--space-8); align-items:start; }
+    .eyebrow { display:inline-flex; padding:.35rem .7rem; border-radius:var(--radius-full); background:var(--color-primary-highlight); color:var(--color-primary); font-size:var(--text-xs); font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+    h1 { font-family:var(--font-display); font-size:clamp(2.3rem, 4vw, 4.8rem); line-height:1.04; max-width:12ch; margin-top:var(--space-4); }
+    .lede { margin-top:var(--space-4); color:var(--color-text-muted); max-width:60ch; }
+    .hero-card { background:linear-gradient(180deg, var(--color-surface), var(--color-surface-offset)); border:1px solid var(--color-border); border-radius:var(--radius-lg); padding:var(--space-6); box-shadow:var(--shadow-md); }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-4); margin-top:var(--space-6); }
+    .stat { padding:var(--space-4); background:var(--color-surface-2); border:1px solid var(--color-border); border-radius:var(--radius-md); }
+    .stat strong { display:block; font-size:var(--text-lg); }
+    .main-grid { display:grid; gap:var(--space-6); padding-bottom:var(--space-16); }
+    .panel { background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); }
+    .panel-head { padding:var(--space-5) var(--space-5) var(--space-3); border-bottom:1px solid var(--color-divider); }
+    .panel-head h2 { font-size:var(--text-lg); }
+    .panel-head p { color:var(--color-text-muted); margin-top:var(--space-2); }
+    .panel-body { padding:var(--space-5); }
+    .tabs { display:flex; flex-wrap:wrap; gap:var(--space-2); margin-bottom:var(--space-4); }
+    .tab { min-height:44px; padding:.7rem 1rem; border-radius:var(--radius-full); border:1px solid var(--color-border); background:var(--color-surface-2); }
+    .tab[aria-selected="true"] { background:var(--color-primary); color:var(--color-text-inverse); border-color:var(--color-primary); }
+    .tab-panel[hidden] { display:none; }
+    .form-grid { display:grid; gap:var(--space-4); }
+    .field { display:grid; gap:var(--space-2); }
+    .field label { font-size:var(--text-sm); font-weight:600; }
+    .input, .select { width:100%; min-height:48px; padding:.85rem 1rem; border-radius:var(--radius-md); border:1px solid var(--color-border); background:var(--color-surface-2); }
+    .button-row { display:flex; gap:var(--space-3); flex-wrap:wrap; }
+    .btn-primary, .btn-secondary { min-height:48px; padding:.85rem 1.15rem; border-radius:var(--radius-md); font-weight:600; }
+    .btn-primary { background:var(--color-primary); color:var(--color-text-inverse); }
+    .btn-primary:hover { background:var(--color-primary-hover); }
+    .btn-secondary { background:var(--color-surface-2); border:1px solid var(--color-border); }
+    .result-card { margin-top:var(--space-5); padding:var(--space-5); border-radius:var(--radius-lg); background:var(--color-surface-2); border:1px solid var(--color-border); }
+    .result-meta { font-size:var(--text-sm); color:var(--color-primary); font-weight:700; letter-spacing:.02em; }
+    .result-text { margin-top:var(--space-3); }
+    .result-list { display:grid; gap:var(--space-3); margin-top:var(--space-5); }
+    .muted { color:var(--color-text-muted); }
+    .footer { border-top:1px solid var(--color-divider); padding:var(--space-6) 0 var(--space-10); color:var(--color-text-muted); }
+    .loading { display:none; font-size:var(--text-sm); color:var(--color-text-muted); margin-top:var(--space-3); }
+    .loading.active { display:block; }
+    @media (min-width: 940px) {
+      .hero-grid { grid-template-columns:1.3fr .9fr; }
+      .main-grid { grid-template-columns:1.2fr .8fr; align-items:start; }
+    }
+    @media (max-width: 680px) {
+      .hero-stats { grid-template-columns:1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration:0.01ms !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="container header-row">
+      <a class="brand" href="#top" aria-label="Bible Lookup home">
+        <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.75">
+          <path d="M18 14h18c8 0 12 4 12 12v24H30c-8 0-12-4-12-12V14Z"></path>
+          <path d="M46 14H28c-8 0-12 4-12 12"></path>
+          <path d="M32 22v20"></path>
+          <path d="M24 30h16"></path>
+        </svg>
+        <div>
+          <div class="brand-name">Bible Lookup</div>
+          <div class="muted" style="font-size:var(--text-xs)">Free KJV search tool</div>
+        </div>
+      </a>
+      <button class="theme-toggle" data-theme-toggle aria-label="Switch theme">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <span class="eyebrow">Cloudflare-ready static site</span>
+          <h1>Look up KJV verses by number, reference, or cross-reference.</h1>
+          <p class="lede">This version runs entirely in the browser with a bundled KJV dataset, so it can be published on Cloudflare Pages with no backend and no recurring hosting cost.[web:115]</p>
+        </div>
+        <aside class="hero-card" aria-label="Site summary">
+          <div class="muted" style="font-size:var(--text-sm); font-weight:600;">Included in this build</div>
+          <div class="hero-stats">
+            <div class="stat"><strong>31,102</strong><span class="muted">KJV verses</span></div>
+            <div class="stat"><strong>66</strong><span class="muted">Books</span></div>
+            <div class="stat"><strong>0</strong><span class="muted">Server cost</span></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="container main-grid">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Search</h2>
+          <p>Choose one lookup mode and search the offline KJV dataset directly in your browser.</p>
+        </div>
+        <div class="panel-body">
+          <div class="tabs" role="tablist" aria-label="Lookup modes">
+            <button class="tab" role="tab" aria-selected="true" aria-controls="panel-number" id="tab-number">Verse #</button>
+            <button class="tab" role="tab" aria-selected="false" aria-controls="panel-reference" id="tab-reference">Reference</button>
+            <button class="tab" role="tab" aria-selected="false" aria-controls="panel-cross" id="tab-cross">Cross Ref</button>
+          </div>
+
+          <section class="tab-panel" id="panel-number" role="tabpanel" aria-labelledby="tab-number">
+            <div class="form-grid">
+              <div class="field">
+                <label for="absoluteVerse">Absolute verse number</label>
+                <input class="input" id="absoluteVerse" type="number" min="1" max="31102" placeholder="Example: 624" />
+              </div>
+              <div class="button-row">
+                <button class="btn-primary" id="searchAbsolute">Find verse</button>
+                <button class="btn-secondary" id="demoAbsolute">Try 624</button>
+              </div>
+              <div class="loading" id="loadingAbsolute">Searching offline KJV data…</div>
+              <div id="resultAbsolute"></div>
+            </div>
+          </section>
+
+          <section class="tab-panel" id="panel-reference" role="tabpanel" aria-labelledby="tab-reference" hidden>
+            <div class="form-grid">
+              <div class="field">
+                <label for="bookSelect">Book</label>
+                <select class="select" id="bookSelect"></select>
+              </div>
+              <div class="form-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));">
+                <div class="field">
+                  <label for="referenceChapter">Chapter</label>
+                  <input class="input" id="referenceChapter" type="number" min="1" placeholder="3" />
+                </div>
+                <div class="field">
+                  <label for="referenceVerse">Verse</label>
+                  <input class="input" id="referenceVerse" type="number" min="1" placeholder="16" />
+                </div>
+              </div>
+              <div class="button-row">
+                <button class="btn-primary" id="searchReference">Find reference</button>
+                <button class="btn-secondary" id="demoReference">Try John 3:16</button>
+              </div>
+              <div class="loading" id="loadingReference">Searching offline KJV data…</div>
+              <div id="resultReference"></div>
+            </div>
+          </section>
+
+          <section class="tab-panel" id="panel-cross" role="tabpanel" aria-labelledby="tab-cross" hidden>
+            <div class="form-grid">
+              <div class="form-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));">
+                <div class="field">
+                  <label for="crossChapter">Chapter</label>
+                  <input class="input" id="crossChapter" type="number" min="1" placeholder="6" />
+                </div>
+                <div class="field">
+                  <label for="crossVerse">Verse</label>
+                  <input class="input" id="crossVerse" type="number" min="1" placeholder="24" />
+                </div>
+              </div>
+              <div class="button-row">
+                <button class="btn-primary" id="searchCross">Find matches</button>
+                <button class="btn-secondary" id="demoCross">Try 6:24</button>
+              </div>
+              <div class="loading" id="loadingCross">Searching offline KJV data…</div>
+              <div id="resultCross"></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <div class="panel-head">
+          <h2>Deploy free on Cloudflare</h2>
+          <p>This project is set up as a static site, which Cloudflare Pages supports directly.[web:113]</p>
+        </div>
+        <div class="panel-body">
+          <ol class="form-grid" style="padding-left:1.15rem;">
+            <li>Upload these files to a GitHub repository.[web:118]</li>
+            <li>In Cloudflare, open Workers &amp; Pages and connect that repository.[web:118]</li>
+            <li>Use no framework preset, set build command to <code>exit 0</code>, and output directory to <code>.</code> for a plain static HTML site.[web:113]</li>
+            <li>Deploy and Cloudflare will give you a free <code>pages.dev</code> URL, with free custom domains also supported on the free plan.[web:113][web:115][web:122]</li>
+          </ol>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">KJV-only offline lookup tool built for static hosting on Cloudflare Pages.[web:113][web:115]</div>
+  </footer>
+
+  <script>
+    const bookOrder = ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy','Joshua','Judges','Ruth','1 Samuel','2 Samuel','1 Kings','2 Kings','1 Chronicles','2 Chronicles','Ezra','Nehemiah','Esther','Job','Psalms','Proverbs','Ecclesiastes','Song of Solomon','Isaiah','Jeremiah','Lamentations','Ezekiel','Daniel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi','Matthew','Mark','Luke','John','Acts','Romans','1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon','Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude','Revelation'];
+    const state = { verses: [], byAbsolute: new Map(), byReference: new Map(), byCross: new Map() };
+
+    function setupThemeToggle() {
+      const toggle = document.querySelector('[data-theme-toggle]');
+      const root = document.documentElement;
+      let mode = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      root.setAttribute('data-theme', mode);
+      const paint = () => {
+        toggle.innerHTML = mode === 'dark'
+          ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>'
+          : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+        toggle.setAttribute('aria-label', `Switch to ${mode === 'dark' ? 'light' : 'dark'} mode`);
+      };
+      paint();
+      toggle.addEventListener('click', () => { mode = mode === 'dark' ? 'light' : 'dark'; root.setAttribute('data-theme', mode); paint(); });
+    }
+
+    function setupTabs() {
+      const tabs = [...document.querySelectorAll('.tab')];
+      const panels = [...document.querySelectorAll('.tab-panel')];
+      tabs.forEach(tab => tab.addEventListener('click', () => {
+        tabs.forEach(t => t.setAttribute('aria-selected', String(t === tab)));
+        panels.forEach(panel => panel.hidden = panel.id !== tab.getAttribute('aria-controls'));
+      }));
+    }
+
+    function populateBooks() {
+      const select = document.getElementById('bookSelect');
+      bookOrder.forEach(book => {
+        const option = document.createElement('option');
+        option.value = book;
+        option.textContent = book;
+        select.appendChild(option);
+      });
+      select.value = 'John';
+    }
+
+    async function loadData() {
+      const response = await fetch('./assets/kjv_seed.json');
+      const verses = await response.json();
+      state.verses = verses;
+      for (const verse of verses) {
+        state.byAbsolute.set(verse.absolute_verse, verse);
+        state.byReference.set(`${verse.book_name}|${verse.chapter}|${verse.verse}`, verse);
+        const crossKey = `${verse.chapter}|${verse.verse}`;
+        if (!state.byCross.has(crossKey)) state.byCross.set(crossKey, []);
+        state.byCross.get(crossKey).push(verse);
+      }
+    }
+
+    function renderVerseCard(verse) {
+      return `<article class="result-card"><div class="result-meta">${verse.book_name} ${verse.chapter}:${verse.verse} • #${verse.absolute_verse}</div><div class="result-text">${escapeHtml(verse.text)}</div></article>`;
+    }
+
+    function escapeHtml(value) {
+      return value.replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    }
+
+    function setLoading(id, active) { document.getElementById(id).classList.toggle('active', active); }
+
+    function showMessage(targetId, message) {
+      document.getElementById(targetId).innerHTML = `<div class="result-card"><div class="muted">${message}</div></div>`;
+    }
+
+    function attachHandlers() {
+      document.getElementById('searchAbsolute').addEventListener('click', () => {
+        const target = 'resultAbsolute';
+        const value = Number(document.getElementById('absoluteVerse').value);
+        setLoading('loadingAbsolute', true);
+        requestAnimationFrame(() => {
+          if (!Number.isInteger(value) || value < 1 || value > 31102) {
+            showMessage(target, 'Enter a whole number from 1 to 31,102.');
+          } else {
+            const verse = state.byAbsolute.get(value);
+            document.getElementById(target).innerHTML = verse ? renderVerseCard(verse) : `<div class="result-card"><div class="muted">No verse found for ${value}.</div></div>`;
+          }
+          setLoading('loadingAbsolute', false);
+        });
+      });
+      document.getElementById('demoAbsolute').addEventListener('click', () => {
+        document.getElementById('absoluteVerse').value = 624;
+        document.getElementById('searchAbsolute').click();
+      });
+
+      document.getElementById('searchReference').addEventListener('click', () => {
+        const target = 'resultReference';
+        const book = document.getElementById('bookSelect').value;
+        const chapter = Number(document.getElementById('referenceChapter').value);
+        const verse = Number(document.getElementById('referenceVerse').value);
+        setLoading('loadingReference', true);
+        requestAnimationFrame(() => {
+          if (!Number.isInteger(chapter) || !Number.isInteger(verse) || chapter < 1 || verse < 1) {
+            showMessage(target, 'Enter positive chapter and verse values.');
+          } else {
+            const match = state.byReference.get(`${book}|${chapter}|${verse}`);
+            document.getElementById(target).innerHTML = match ? renderVerseCard(match) : `<div class="result-card"><div class="muted">No verse found for ${book} ${chapter}:${verse}.</div></div>`;
+          }
+          setLoading('loadingReference', false);
+        });
+      });
+      document.getElementById('demoReference').addEventListener('click', () => {
+        document.getElementById('bookSelect').value = 'John';
+        document.getElementById('referenceChapter').value = 3;
+        document.getElementById('referenceVerse').value = 16;
+        document.getElementById('searchReference').click();
+      });
+
+      document.getElementById('searchCross').addEventListener('click', () => {
+        const target = 'resultCross';
+        const chapter = Number(document.getElementById('crossChapter').value);
+        const verse = Number(document.getElementById('crossVerse').value);
+        setLoading('loadingCross', true);
+        requestAnimationFrame(() => {
+          if (!Number.isInteger(chapter) || !Number.isInteger(verse) || chapter < 1 || verse < 1) {
+            showMessage(target, 'Enter positive chapter and verse values.');
+          } else {
+            const matches = state.byCross.get(`${chapter}|${verse}`) || [];
+            document.getElementById(target).innerHTML = matches.length
+              ? `<div class="result-list">${matches.map(renderVerseCard).join('')}</div>`
+              : `<div class="result-card"><div class="muted">No books contain ${chapter}:${verse} in the imported KJV data.</div></div>`;
+          }
+          setLoading('loadingCross', false);
+        });
+      });
+      document.getElementById('demoCross').addEventListener('click', () => {
+        document.getElementById('crossChapter').value = 6;
+        document.getElementById('crossVerse').value = 24;
+        document.getElementById('searchCross').click();
+      });
+    }
+
+    async function init() {
+      setupThemeToggle();
+      setupTabs();
+      populateBooks();
+      showMessage('resultAbsolute', 'Loading KJV dataset…');
+      showMessage('resultReference', 'Loading KJV dataset…');
+      showMessage('resultCross', 'Loading KJV dataset…');
+      try {
+        await loadData();
+        attachHandlers();
+        showMessage('resultAbsolute', 'Enter a verse number or try the sample search.');
+        showMessage('resultReference', 'Choose a book and enter chapter and verse.');
+        showMessage('resultCross', 'Enter a chapter and verse pair to find all matching books.');
+      } catch (error) {
+        const msg = 'Unable to load the offline KJV data file. Make sure kjv_seed.json is present in the assets folder.';
+        showMessage('resultAbsolute', msg);
+        showMessage('resultReference', msg);
+        showMessage('resultCross', msg);
+      }
+    }
+    init();
+  </script>
+</body>
+</html>
